@@ -7,15 +7,15 @@ import requests
 from bs4 import BeautifulSoup
 
 
-@dp.message_handler(commands = "start")
+@dp.message_handler(commands="start")
 async def start(message: types.Message):
-    if(not BotDB.user_exists(message.from_user.id)):
+    if not BotDB.user_exists(message.from_user.id):
         BotDB.add_user(message.from_user.id)
 
     await message.bot.send_message(message.from_user.id, "Добро пожаловать!")
 
 
-@dp.message_handler(commands = ("spent", "earned", "s", "e"), commands_prefix = "/!")
+@dp.message_handler(commands=("spent", "earned", "s", "e"), commands_prefix="/!")
 async def start(message: types.Message):
     cmd_variants = (('/spent', '/s', '!spent', '!s'), ('/earned', '/e', '!earned', '!e'))
     operation = '-' if message.text.startswith(cmd_variants[0]) else '+'
@@ -25,14 +25,14 @@ async def start(message: types.Message):
         for j in i:
             value = value.replace(j, '').strip()
 
-    if(len(value)):
+    if len(value):
         x = re.findall(r"\d+(?:.\d+)?", value)
-        if(len(x)):
+        if len(x):
             value = float(x[0].replace(',', '.'))
 
             BotDB.add_record(message.from_user.id, operation, value)
 
-            if(operation == '-'):
+            if operation == '-':
                 await message.reply("✅ Запись о <u><b>расходе</b></u> успешно внесена!")
             else:
                 await message.reply("✅ Запись о <u><b>доходе</b></u> успешно внесена!")
@@ -42,7 +42,7 @@ async def start(message: types.Message):
         await message.reply("Не введена сумма!")
 
 
-@dp.message_handler(commands = ("history", "h"), commands_prefix = "/!")
+@dp.message_handler(commands=("history", "h"), commands_prefix="/!")
 async def start(message: types.Message):
     cmd_variants = ('/history', '/h', '!history', '!h')
     within_als = {
@@ -56,15 +56,15 @@ async def start(message: types.Message):
         cmd = cmd.replace(r, '').strip()
 
     within = 'day'
-    if(len(cmd)):
+    if len(cmd):
         for k in within_als:
             for als in within_als[k]:
-                if(als == cmd):
+                if als == cmd:
                     within = k
 
     records = BotDB.get_records(message.from_user.id, within)
 
-    if(len(records)):
+    if len(records):
         answer = f"🕘 История операций за {within_als[within][-1]}\n\n"
 
         for r in records:
@@ -79,14 +79,11 @@ async def start(message: types.Message):
 
 @dp.message_handler(commands=["cryptocurrency"])
 async def cryptocurrency(message: types.Message):
-    headers = {
-        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
-    }
+    headers = config.NAME_DB
     url = "https://coinmarketcap.com/"
     req = requests.get(url, headers)
     script = req.text
     soup = BeautifulSoup(script, "lxml")
-    now = ""
     reply = "Information from CoinMarketCap\n\n"
     collection = soup.find("table", class_="h7vnx2-2 czTsgW cmc-table").find("tbody").find_all("tr")
     count = 0
@@ -108,16 +105,17 @@ async def cryptocurrency(message: types.Message):
 
 @dp.message_handler(commands=["currency"])
 async def currency(message: types.Message):
-    headers = {
-        "user-agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36"
-    }
+    headers = config.NAME_DB
     url = "https://www.banki.ru/products/currency/cb/"
     req = requests.get(url, headers)
     script = req.text
     soup = BeautifulSoup(script, "lxml")
     reply = "Information from Central Bank of the Russian Federation\n\n"
-    dollar = soup.find("table", class_="standard-table standard-table--row-highlight").find("tbody").find_all("tr")[0].find_all("td")
-    euro = soup.find("table", class_="standard-table standard-table--row-highlight").find("tbody").find_all("tr")[1].find_all("td")
-    reply += dollar[0].text.strip() + ": " + dollar[3].text.strip() + " RUB and changes: " + dollar[4].text.strip() + " today \n"
+    dollar = soup.find("table", class_="standard-table standard-table--row-highlight").find("tbody").find_all("tr")[0].\
+        find_all("td")
+    euro = soup.find("table", class_="standard-table standard-table--row-highlight").find("tbody").find_all("tr")[1].\
+        find_all("td")
+    reply += dollar[0].text.strip() + ": " + dollar[3].text.strip() + " RUB and changes: " + \
+        dollar[4].text.strip() + " today \n"
     reply += euro[0].text.strip() + ": " + euro[3].text.strip() + " RUB and changes: " + euro[4].text.strip() + " today"
     await message.reply(reply)
